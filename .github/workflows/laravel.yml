@@ -11,7 +11,7 @@ on:
 
 jobs:
   laravel-build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: self-host
     steps:
     - uses: actions/checkout@v1
     - name: Install Dependencies
@@ -44,3 +44,24 @@ jobs:
         dev: yes
         progress: no
         quiet: no
+  deploy:
+    runs-on: ubuntu-latest
+    needs: laravel-build-and-test
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v2
+        with:
+          name: php-app
+
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v2
+        id: deploy-to-webapp
+        with:
+          app-name: 'tokensys'
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_a847ea18adbd4dfeba1b09683a393c55 }}
+          package: .
